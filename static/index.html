@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blind Test JUL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="page-backdrop" aria-hidden="true"></div>
+<svg id="skyline" aria-hidden="true" viewBox="0 0 680 90" preserveAspectRatio="none">
+  <path d="M0,90 L0,55 L20,55 L20,40 L35,40 L35,55 L55,55 L55,20 L60,20 L60,55 L90,55 L90,35 L100,35 L100,55 L140,55 L140,45 L150,45 L150,55 L180,55 L180,15 L186,15 L186,55 L230,55 L230,50 Q235,20 240,50 L240,55 L270,55 L270,42 L280,42 L280,55 L330,55 L330,25 L336,25 L336,55 L380,55 L380,48 Q385,18 390,48 L390,55 L430,55 L430,38 L440,38 L440,55 L480,55 L480,52 Q485,22 490,52 L490,55 L530,55 L530,30 L540,30 L540,55 L580,55 L580,45 L590,45 L590,55 L620,55 L620,18 L626,18 L626,55 L660,55 L660,40 L680,40 L680,90 Z" fill="var(--bg-panel-3)" opacity="0.35"/>
+</svg>
+<div id="app">
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="hero-photo-wrap">
+      <div class="hero-photo-fallback"></div>
+      <img id="hero-photo" class="hero-photo" alt="JUL" style="display:none;" onerror="this.style.display='none';" />
+    </div>
+    <h1 class="brand">BLIND TEST<br/>JUL</h1>
+    <p class="subtitle">Devine les sons de JUL avant tes potes.</p>
+    <div class="filmstrip" id="home-filmstrip"></div>
+    <input type="text" id="player-name" placeholder="Ton pseudo" maxlength="20" />
+    <div class="mode-row">
+      <div class="mode-card" id="mode-solo">
+        <div class="icon">🎧</div>
+        <div class="title">SOLO</div>
+        <div class="desc">Joue seul, bats ton record personnel.</div>
+      </div>
+      <div class="mode-card" id="mode-multi">
+        <div class="icon">🏆</div>
+        <div class="title">MULTIJOUEUR</div>
+        <div class="desc">Crée ou rejoins un salon entre potes.</div>
+      </div>
+    </div>
+    <div class="best-badge" id="best-badge" style="display:none; font-family:'DM Mono',monospace; font-size:12px; color:var(--cream-dim); background:rgba(227,168,87,0.08); border:1px solid rgba(227,168,87,0.25); padding:6px 14px; border-radius:999px;"></div>
+    <div id="home-error"></div>
+  </div>
+
+  <!-- MULTIPLAYER ENTRY (create or join) -->
+  <div class="screen" id="screen-multi-entry">
+    <h1 class="brand" style="font-size:38px;">MULTIJOUEUR</h1>
+    <div class="setup-card">
+      <p class="setup-title">Créer un salon</p>
+      <p class="setup-sub">Tu deviens l'hôte : tu choisis les réglages et tu lances la partie.</p>
+      <button class="btn" id="btn-create-room">Créer un salon</button>
+    </div>
+    <div class="setup-card">
+      <p class="setup-title">Rejoindre un salon</p>
+      <p class="setup-sub">Demande le code à 5 caractères à l'hôte.</p>
+      <input type="text" id="join-code" placeholder="CODE DU SALON" maxlength="6" style="text-transform:uppercase;" />
+      <button class="btn" id="btn-join-room">Rejoindre</button>
+    </div>
+    <button class="btn ghost small" id="btn-back-home-1">Retour</button>
+    <div id="multi-entry-error"></div>
+  </div>
+
+  <!-- LOBBY -->
+  <div class="screen" id="screen-lobby">
+    <h1 class="brand" style="font-size:32px;">SALON</h1>
+    <div class="room-code" id="lobby-code">-----</div>
+    <p class="subtitle" id="lobby-hint">Partage ce code avec tes potes.</p>
+
+    <div class="player-list" id="lobby-players"></div>
+
+    <div id="host-setup" style="display:none; width:100%;">
+      <div class="setup-card">
+        <p class="setup-title">Nombre de manches</p>
+        <div class="pill-row" id="rounds-pills"></div>
+      </div>
+      <div class="setup-card">
+        <p class="setup-title">Difficulté</p>
+        <p class="setup-sub">Un extrait plus court = plus dur, mais plus de points si tu réponds vite.</p>
+        <div class="pill-row" id="difficulty-pills"></div>
+      </div>
+      <div class="setup-card">
+        <p class="setup-title">Période / albums</p>
+        <p class="setup-sub" id="albums-sub">Sélectionne les albums à inclure.</p>
+        <div class="era-row" id="era-row"></div>
+        <div class="album-grid" id="album-grid"></div>
+      </div>
+      <button class="btn" id="btn-start-multi">Lancer la partie</button>
+    </div>
+    <p id="waiting-host-msg" style="color:var(--cream-dim); font-size:13px;">En attente que l'hôte lance la partie...</p>
+
+    <button class="btn ghost small" id="btn-leave-lobby">Quitter le salon</button>
+    <div id="lobby-error"></div>
+  </div>
+
+  <!-- SOLO SETUP -->
+  <div class="screen" id="screen-setup">
+    <h1 class="brand" style="font-size:38px;">RÉGLAGES</h1>
+    <div id="setup-loading">
+      <div class="spinner"></div>
+      <div class="loader-text">Chargement de la discographie...</div>
+    </div>
+    <div id="setup-body" style="display:none; width:100%;">
+      <div class="setup-card">
+        <p class="setup-title">Nombre de manches</p>
+        <div class="pill-row" id="solo-rounds-pills"></div>
+      </div>
+      <div class="setup-card">
+        <p class="setup-title">Difficulté</p>
+        <div class="pill-row" id="solo-difficulty-pills"></div>
+      </div>
+      <div class="setup-card">
+        <p class="setup-title">Période / albums</p>
+        <p class="setup-sub" id="solo-albums-sub">Sélectionne les albums à inclure.</p>
+        <div class="era-row" id="solo-era-row"></div>
+        <div class="album-grid" id="solo-album-grid"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost small" id="btn-back-home-2">Retour</button>
+        <button class="btn" id="btn-launch-solo">Lancer la partie</button>
+      </div>
+    </div>
+    <div id="setup-error"></div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="screen" id="screen-loading">
+    <div class="spinner"></div>
+    <div class="loader-text" id="loader-text">Connexion...</div>
+  </div>
+
+  <!-- GAME (solo + multi partagent la même vue) -->
+  <div class="screen" id="screen-game">
+    <div class="hud">
+      <span>MANCHE <b id="hud-round">1</b>/<span id="hud-total">10</span></span>
+      <span class="streak" id="hud-streak"></span>
+      <span id="hud-score-wrap">SCORE <b id="hud-score">0</b></span>
+    </div>
+
+    <div class="disc-wrap">
+      <div class="disc spinning" id="disc">
+        <div class="disc-face front"></div>
+        <div class="disc-face back" id="disc-cover"></div>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="audio-controls">
+      <button class="btn ghost" id="btn-play">▶ Écouter l'extrait</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="options" id="options"></div>
+    <div class="track-reveal" id="track-reveal"></div>
+
+    <div id="live-scores" class="player-list" style="display:none;"></div>
+
+    <button class="btn" id="btn-next" style="display:none;">Manche suivante</button>
+  </div>
+
+  <!-- END (solo) -->
+  <div class="screen" id="screen-end">
+    <div class="score-big" id="final-score">0/10</div>
+    <div class="score-tier" id="final-tier"></div>
+    <div class="new-record" id="new-record" style="display:none;">🏆 Nouveau record personnel !</div>
+    <div class="recap" id="recap"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="btn-change-settings">Changer les réglages</button>
+      <button class="btn" id="btn-replay">Rejouer</button>
+    </div>
+  </div>
+
+  <!-- END (multi) -->
+  <div class="screen" id="screen-end-multi">
+    <h1 class="brand" style="font-size:38px;">CLASSEMENT</h1>
+    <div id="ranking-list" style="width:100%; margin: 16px 0 24px 0;"></div>
+    <div class="btn-row">
+      <button class="btn" id="btn-back-home-3">Retour à l'accueil</button>
+    </div>
+  </div>
+
+</div>
+
+<audio id="audio-player"></audio>
+<script src="/static/app.js"></script>
+</body>
+</html>
