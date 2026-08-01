@@ -56,6 +56,8 @@ async def get_catalog(force: bool = False) -> tuple[dict, list[dict]]:
         data = await _get(client, f"/artist/{artist['id']}/albums", limit=200)
 
     albums = []
+    seen_covers = set()
+    seen_titles = set()
     for a in data.get("data", []):
         year: Optional[int] = None
         if a.get("release_date"):
@@ -63,10 +65,20 @@ async def get_catalog(force: bool = False) -> tuple[dict, list[dict]]:
                 year = int(a["release_date"][:4])
             except ValueError:
                 pass
+        cover = a.get("cover_medium")
+        title_key = a["title"].strip().lower()
+        # On ignore les doublons visuels (même pochette) et les doublons de
+        # titre exact (rééditions, singles qui reprennent le nom de l'album).
+        if cover and cover in seen_covers:
+            continue
+        if title_key in seen_titles:
+            continue
+        seen_covers.add(cover)
+        seen_titles.add(title_key)
         albums.append({
             "id": a["id"],
             "title": a["title"],
-            "cover": a.get("cover_medium"),
+            "cover": cover,
             "year": year,
         })
     albums.sort(key=lambda a: (a["year"] or 0), reverse=True)

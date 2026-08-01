@@ -177,6 +177,7 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
 .track-reveal b { color: var(--cream); }
 
 .score-big { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
+.score-unit { font-size: 13px; color: var(--cream-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 .score-tier { font-size: 15px; color: var(--cream-dim); margin-bottom: 8px; }
 .new-record { font-size: 12px; color: var(--ok); font-weight: 700; margin-bottom: 20px; }
 .error-box { background: rgba(224,96,76,0.12); border: 1px solid var(--bad); color: var(--bad); padding: 14px 18px;

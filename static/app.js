@@ -192,7 +192,9 @@
     pool: [],
     rounds: [],
     roundIdx: 0,
-    score: 0,
+    correctCount: 0,
+    points: 0,
+    roundPlayStartTs: null,
     streak: 0,
     bestStreak: 0,
     recapLog: [],
@@ -275,7 +277,7 @@
       const count = Math.min(solo.roundsCount, pool.length);
       if (count < 2) throw new Error("Pas assez de titres avec extrait disponible pour cette sélection.");
       solo.rounds = buildRounds(pool, count);
-      solo.roundIdx = 0; solo.score = 0; solo.streak = 0; solo.bestStreak = 0; solo.recapLog = [];
+      solo.roundIdx = 0; solo.correctCount = 0; solo.points = 0; solo.streak = 0; solo.bestStreak = 0; solo.recapLog = [];
       el('hud-score-wrap').style.display = 'inline';
       el('live-scores').style.display = 'none';
       showScreen('game');
@@ -300,7 +302,7 @@
     const r = solo.rounds[solo.roundIdx];
     el('hud-round').textContent = solo.roundIdx + 1;
     el('hud-total').textContent = solo.rounds.length;
-    el('hud-score').textContent = solo.score;
+    el('hud-score').textContent = solo.points;
     updateStreakDisplay();
     el('feedback').textContent = '';
     el('feedback').className = 'feedback';
@@ -309,6 +311,7 @@
     el('progress-fill').style.width = '0%';
     el('disc-cover').style.backgroundImage = `url('${(r.track.album && r.track.album.cover) || ''}')`;
 
+    solo.roundPlayStartTs = null;
     clearTimeout(snippetTimer);
     audio.pause();
     audio.src = r.track.preview;
@@ -327,7 +330,13 @@
     el('btn-play').disabled = false;
     el('btn-play').textContent = "▶ Écouter l'extrait";
     el('disc').classList.remove('spinning');
-    el('btn-play').onclick = () => playSnippet(solo.snippetSeconds);
+    el('btn-play').onclick = () => {
+      // Le chrono du bonus de rapidité démarre au premier lancement de
+      // l'extrait (et pas avant), pour ne pas pénaliser le temps de
+      // réflexion avant de cliquer sur "Écouter".
+      if (solo.roundPlayStartTs === null) solo.roundPlayStartTs = Date.now();
+      playSnippet(solo.snippetSeconds);
+    };
   }
 
   function playSnippet(snippetSeconds) {
@@ -363,12 +372,24 @@
       });
     }
 
-    el('feedback').textContent = isCorrect ? 'Bonne réponse !' : 'Raté !';
-    el('feedback').className = 'feedback ' + (isCorrect ? 'ok' : 'bad');
+    let gained = 0;
+    if (isCorrect) {
+      const elapsedSec = solo.roundPlayStartTs !== null
+        ? (Date.now() - solo.roundPlayStartTs) / 1000
+        : solo.snippetSeconds; // jamais écouté -> pas de bonus de rapidité
+      const speedRatio = Math.max(0, 1 - Math.min(elapsedSec, solo.snippetSeconds) / solo.snippetSeconds);
+      gained = Math.round(100 + 900 * speedRatio);
+      solo.correctCount++;
+      solo.points += gained;
+      solo.streak++;
+      solo.bestStreak = Math.max(solo.bestStreak, solo.streak);
+    } else {
+      solo.streak = 0;
+    }
 
-    if (isCorrect) { solo.score++; solo.streak++; solo.bestStreak = Math.max(solo.bestStreak, solo.streak); }
-    else { solo.streak = 0; }
-    el('hud-score').textContent = solo.score;
+    el('feedback').textContent = isCorrect ? `Bonne réponse ! +${gained} pts` : 'Raté !';
+    el('feedback').className = 'feedback ' + (isCorrect ? 'ok' : 'bad');
+    el('hud-score').textContent = solo.points;
     updateStreakDisplay();
 
     solo.recapLog.push({ title: r.track.title, correct: isCorrect });
@@ -401,14 +422,17 @@
 
   async function finishSolo() {
     audio.pause();
-    el('final-score').textContent = `${solo.score}/${solo.rounds.length}`;
-    const ratio = solo.score / solo.rounds.length;
+    el('final-score').textContent = `${solo.points}`;
+    el('final-score-unit').textContent = 'points';
+    const ratio = solo.correctCount / solo.rounds.length;
     let tier;
     if (ratio >= 0.9) tier = "Toi t'es OKLM sur JUL, respect.";
     else if (ratio >= 0.6) tier = "Sacré niveau, tu connais tes classiques.";
     else if (ratio >= 0.3) tier = "Pas mal, mais y'a du son à rattraper.";
     else tier = "Retour aux playlists, wesh !";
-    el('final-tier').textContent = tier + (solo.bestStreak >= 3 ? ` (série max : ${solo.bestStreak})` : '');
+    let tierLine = `${tier} (${solo.correctCount}/${solo.rounds.length} bonnes réponses`;
+    tierLine += solo.bestStreak >= 3 ? `, série max : ${solo.bestStreak})` : ')';
+    el('final-tier').textContent = tierLine;
 
     const recapEl = el('recap');
     recapEl.innerHTML = '';
@@ -421,7 +445,7 @@
 
     el('new-record').style.display = 'none';
     try {
-      const result = await apiPost('/api/best-score', { player: playerName, score: solo.score, rounds: solo.rounds.length });
+      const result = await apiPost('/api/best-score', { player: playerName, score: solo.correctCount, rounds: solo.rounds.length });
       if (result.is_new_record) el('new-record').style.display = 'block';
     } catch (e) { /* pas grave */ }
     refreshBestBadge();
@@ -566,7 +590,7 @@
         break;
       }
       case 'answer_ack': {
-        el('feedback').textContent = msg.correct ? `Bonne réponse ! (+${msg.score - (multi._prevScore || 0)} pts au total : ${msg.score})` : 'Raté ! En attente des autres...';
+        el('feedback').textContent = msg.correct ? `Bonne réponse ! +${msg.gained} pts (total : ${msg.score})` : 'Raté ! En attente des autres...';
         el('feedback').className = 'feedback ' + (msg.correct ? 'ok' : 'bad');
         break;
       }

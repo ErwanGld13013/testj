@@ -204,6 +204,7 @@ class Room:
 
         p.answered_round = self.round_idx
         p.last_correct = correct
+        gained = 0
         if correct:
             speed_ratio = max(0.0, 1 - min(elapsed, snippet) / snippet) if snippet else 0.0
             gained = int(MIN_SCORE + MAX_BONUS * speed_ratio)
@@ -211,7 +212,7 @@ class Room:
 
         # Confirmation immédiate au joueur seul (pas de broadcast : on ne
         # révèle rien aux autres avant la fin de la manche).
-        await p.ws.send_json({"type": "answer_ack", "correct": correct, "score": p.score})
+        await p.ws.send_json({"type": "answer_ack", "correct": correct, "score": p.score, "gained": gained})
 
 
 class RoomManager:
