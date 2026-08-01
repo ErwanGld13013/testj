@@ -20,18 +20,22 @@ html, body {
 }
 #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; }
 .screen { width: 100%; max-width: 540px; display: none; flex-direction: column; align-items: center; text-align: center; }
-.screen.active { display: flex; }
-
+.screen.active { display: flex; animation: screenIn .45s cubic-bezier(.16,.8,.3,1); }
+@keyframes screenIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+ 
 h1.brand {
   font-family: 'Bebas Neue', sans-serif; font-size: 60px; letter-spacing: 3px; line-height: 0.9; margin: 0 0 4px 0;
-  background: linear-gradient(180deg, var(--gold) 0%, #C97A3D 100%);
+  background: linear-gradient(120deg, var(--gold) 0%, #C97A3D 30%, var(--gold) 55%, #ffe3b0 75%, var(--gold) 100%);
+  background-size: 220% auto;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: 0 4px 24px rgba(227,168,87,0.25);
+  animation: shimmer 7s linear infinite;
 }
+@keyframes shimmer { to { background-position: 220% center; } }
 .sun { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 12px;
   background: radial-gradient(circle at 35% 30%, #ffe3b0, var(--gold) 55%, var(--gold-dim) 100%);
   box-shadow: 0 0 40px 6px rgba(227,168,87,0.35); }
-
+ 
 /* Portrait de l'artiste (photo officielle Deezer) avec halo doré */
 .hero-photo-wrap { position: relative; width: 116px; height: 116px; margin: 0 auto 14px auto; }
 .hero-photo-fallback { position: absolute; inset: 0; border-radius: 50%;
@@ -40,7 +44,7 @@ h1.brand {
 .hero-photo { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%;
   object-fit: cover; border: 3px solid var(--gold);
   box-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 0 0 4px rgba(227,168,87,0.15); }
-
+ 
 /* Fond photo plein écran, très flouté, discret derrière toute l'appli */
 #page-backdrop {
   position: fixed; inset: 0; z-index: -2;
@@ -49,10 +53,10 @@ h1.brand {
   opacity: 0; transition: opacity 1.1s ease;
 }
 #page-backdrop.loaded { opacity: 1; }
-
+ 
 /* Silhouette de skyline / Méditerranée en bas de l'écran, purement décorative */
 #skyline { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 70px; z-index: -1; pointer-events: none; }
-
+ 
 /* Bandeau de pochettes d'albums, façon vitrine de disquaire */
 .filmstrip { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 2px 0 16px 0; }
 .filmstrip::-webkit-scrollbar { height: 5px; }
@@ -62,24 +66,26 @@ h1.brand {
 .filmstrip img:hover { opacity: 1; transform: translateY(-2px); }
 .subtitle { color: var(--cream-dim); font-size: 15px; margin-bottom: 22px; }
 .subtitle b { color: var(--gold); font-weight: 500; }
-
-.mode-row { display: flex; gap: 16px; width: 100%; margin-bottom: 20px; }
+ 
+.mode-row { display: flex; gap: 16px; width: 100%; margin-bottom: 20px; perspective: 800px; }
 .mode-card {
-  flex: 1; background: var(--bg-panel); border: 1.5px solid var(--bg-panel-3); border-radius: 16px;
-  padding: 22px 14px; cursor: pointer; transition: all .15s ease;
+  flex: 1; background: rgba(18,41,77,0.42); backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(227,168,87,0.18); border-radius: 16px;
+  padding: 22px 14px; cursor: pointer; transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+  transform-style: preserve-3d;
 }
-.mode-card:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
+.mode-card:hover { border-color: var(--gold-dim); box-shadow: 0 14px 30px rgba(0,0,0,0.35); }
 .mode-card .icon { font-size: 28px; margin-bottom: 8px; }
 .mode-card .title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; font-size: 20px; color: var(--gold); }
 .mode-card .desc { font-size: 12px; color: var(--cream-dim); margin-top: 4px; }
-
+ 
 input[type=text] {
   font-family: 'DM Sans', sans-serif; font-size: 15px; background: var(--bg-panel);
   border: 1.5px solid var(--bg-panel-3); border-radius: 10px; padding: 12px 14px; color: var(--cream);
   width: 100%; margin-bottom: 12px; text-align: center;
 }
 input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
-
+ 
 .btn {
   font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 16px; border: none; border-radius: 999px;
   padding: 14px 32px; cursor: pointer;
@@ -92,29 +98,29 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
 .btn.small { padding: 9px 20px; font-size: 13px; }
 .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-
+ 
 .loader-text { color: var(--cream-dim); font-size: 14px; margin-top: 18px; min-height: 20px; }
 .spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(227,168,87,0.2);
   border-top-color: var(--gold); animation: spin 0.9s linear infinite; margin: 0 auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.setup-card { width: 100%; background: rgba(18,41,77,0.5); border: 1px solid var(--bg-panel-3);
-  border-radius: 20px; padding: 20px; margin-bottom: 14px; text-align: left; }
+ 
+.setup-card { width: 100%; background: rgba(18,41,77,0.4); backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid rgba(227,168,87,0.15); border-radius: 20px; padding: 20px; margin-bottom: 14px; text-align: left; }
 .setup-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px; font-size: 19px; color: var(--gold); margin: 0 0 4px 0; }
 .setup-sub { font-size: 12px; color: var(--cream-dim); margin: 0 0 12px 0; }
-
+ 
 .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill { font-family: 'DM Mono', monospace; font-size: 13px; background: var(--bg-panel);
   border: 1.5px solid var(--bg-panel-3); color: var(--cream-dim); padding: 8px 16px; border-radius: 999px;
   cursor: pointer; transition: all .15s ease; }
 .pill.active { background: rgba(227,168,87,0.15); border-color: var(--gold); color: var(--gold); }
 .pill:hover { border-color: var(--gold-dim); }
-
+ 
 .era-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .era-btn { font-size: 12px; background: var(--bg-panel-2); border: 1px solid var(--bg-panel-3); color: var(--cream);
   padding: 7px 12px; border-radius: 10px; cursor: pointer; }
 .era-btn:hover { border-color: var(--gold-dim); }
-
+ 
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;
   max-height: 240px; overflow-y: auto; padding: 4px 2px; }
 .album-grid::-webkit-scrollbar { width: 6px; }
@@ -130,7 +136,7 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
   background: var(--gold); color: #221304; font-size: 11px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(.6); transition: all .15s ease; }
 .album-chip.selected .check { opacity: 1; transform: scale(1); }
-
+ 
 .disc-wrap { perspective: 900px; margin-bottom: 16px; position: relative; }
 .disc { width: 170px; height: 170px; border-radius: 50%; position: relative; transform-style: preserve-3d;
   transition: transform .6s cubic-bezier(.4,.2,.2,1); }
@@ -147,17 +153,42 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
   display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px rgba(227,168,87,0.4); }
 .disc-face.back { transform: rotateY(180deg); background-size: cover; background-position: center;
   box-shadow: 0 12px 30px rgba(0,0,0,0.5), inset 0 0 0 3px var(--gold); }
-
+ 
 .hud { display: flex; justify-content: space-between; align-items: center; width: 100%;
   font-family: 'DM Mono', monospace; font-size: 13px; color: var(--cream-dim); margin-bottom: 12px; }
 .hud b { color: var(--gold); }
 .streak { color: var(--coral); font-weight: 700; }
-
+ 
 .progress-bar { width: 100%; height: 4px; background: var(--bg-panel); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
 .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); transition: width .1s linear; }
-
-.audio-controls { display: flex; gap: 10px; margin-bottom: 18px; }
-
+ 
+.audio-controls { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+ 
+/* Bras de platine : se pose sur le disque quand l'extrait joue */
+.tonearm { position: absolute; top: -8px; right: -8px; width: 58px; height: 6px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius: 3px;
+  transform-origin: right center; transform: rotate(-26deg);
+  transition: transform .5s cubic-bezier(.34,1.4,.64,1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4); pointer-events: none; }
+.tonearm::after { content: ''; position: absolute; right: -5px; top: -5px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 3px rgba(227,168,87,0.25); }
+.tonearm.down { transform: rotate(6deg); }
+ 
+/* Barres d'égaliseur, animées pendant la lecture */
+.eq-bars { display: flex; align-items: flex-end; gap: 3px; height: 22px; }
+.eq-bars span { width: 4px; background: var(--gold); border-radius: 2px; height: 6px; opacity: .3; transition: opacity .2s ease; }
+.eq-bars.playing span { opacity: 1; animation: eq-bounce .9s ease-in-out infinite; }
+.eq-bars.playing span:nth-child(1) { animation-delay: 0s; }
+.eq-bars.playing span:nth-child(2) { animation-delay: .18s; }
+.eq-bars.playing span:nth-child(3) { animation-delay: .36s; }
+.eq-bars.playing span:nth-child(4) { animation-delay: .09s; }
+@keyframes eq-bounce { 0%, 100% { height: 6px; } 50% { height: 22px; } }
+ 
+/* Particules dorées (série de bonnes réponses, nouveau record) */
+.particle { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 999;
+  animation: particle-burst .7s ease-out forwards; }
+@keyframes particle-burst { to { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; } }
+ 
 .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 16px; }
 .option { background: var(--bg-panel); border: 1.5px solid var(--bg-panel-2); border-radius: 14px; padding: 15px 12px;
   color: var(--cream); font-size: 14px; font-weight: 500; cursor: pointer; text-align: left; transition: all .15s ease; }
@@ -167,41 +198,41 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
 .option.correct { background: rgba(95,191,143,0.15); border-color: var(--ok); color: var(--ok); }
 .option.wrong { background: rgba(224,96,76,0.15); border-color: var(--bad); color: var(--bad); }
 .option.chosen { box-shadow: 0 0 0 2px var(--gold) inset; }
-
+ 
 .feedback { min-height: 22px; font-weight: 700; margin-bottom: 8px; }
 .feedback.ok { color: var(--ok); }
 .feedback.bad { color: var(--bad); }
 .feedback.wait { color: var(--cream-dim); }
-
+ 
 .track-reveal { font-size: 13px; color: var(--cream-dim); margin-bottom: 14px; }
 .track-reveal b { color: var(--cream); }
-
+ 
 .score-big { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
 .score-unit { font-size: 13px; color: var(--cream-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 .score-tier { font-size: 15px; color: var(--cream-dim); margin-bottom: 8px; }
 .new-record { font-size: 12px; color: var(--ok); font-weight: 700; margin-bottom: 20px; }
 .error-box { background: rgba(224,96,76,0.12); border: 1px solid var(--bad); color: var(--bad); padding: 14px 18px;
   border-radius: 12px; font-size: 14px; margin-top: 16px; }
-
+ 
 .recap { width: 100%; max-height: 200px; overflow-y: auto; margin: 8px 0 20px 0; text-align: left; }
 .recap-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--bg-panel-2); font-size: 13px; }
 .recap-item .mark { width: 18px; text-align: center; font-weight: 700; }
 .recap-item.ok .mark { color: var(--ok); }
 .recap-item.bad .mark { color: var(--bad); }
 .recap-item .rt { color: var(--cream-dim); flex: 1; }
-
+ 
 .room-code { font-family: 'Bebas Neue', sans-serif; font-size: 46px; letter-spacing: 6px; color: var(--gold); margin: 6px 0 18px 0; }
 .player-list { width: 100%; margin: 10px 0 20px 0; text-align: left; }
 .player-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-panel);
   border: 1px solid var(--bg-panel-3); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 14px; }
 .player-row .badge { font-size: 11px; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 999px; padding: 2px 8px; }
 .player-row .pts { font-family: 'DM Mono', monospace; color: var(--gold); }
-
+ 
 .ranking-row { display: flex; align-items: center; gap: 12px; background: var(--bg-panel); border: 1px solid var(--bg-panel-3);
   border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; width: 100%; }
 .ranking-row .pos { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--gold); width: 28px; }
 .ranking-row .nm { flex: 1; text-align: left; font-weight: 600; }
 .ranking-row .sc { font-family: 'DM Mono', monospace; color: var(--gold); }
 .ranking-row.gold { border-color: var(--gold); background: rgba(227,168,87,0.08); }
-
+ 
 a, a:visited { color: var(--gold); }
