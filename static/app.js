@@ -294,6 +294,49 @@
   const audio = el('audio-player');
   let snippetTimer = null;
 
+  // L'égaliseur et le bras de platine réagissent directement aux événements
+  // natifs de l'élément <audio> : quel que soit l'endroit du code qui
+  // démarre/arrête la lecture (solo ou multi), l'affichage reste synchronisé
+  // sans avoir à dupliquer la logique à chaque appel.
+  audio.addEventListener('play', () => {
+    el('eq-bars').classList.add('playing');
+    el('tonearm').classList.add('down');
+  });
+  audio.addEventListener('pause', () => {
+    el('eq-bars').classList.remove('playing');
+    el('tonearm').classList.remove('down');
+  });
+
+  function burstParticles(originEl) {
+    if (!originEl) return;
+    const rect = originEl.getBoundingClientRect();
+    const colors = ['#E3A857', '#FF6F59', '#ffe3b0'];
+    for (let i = 0; i < 14; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 50 + Math.random() * 70;
+      p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      p.style.background = colors[i % colors.length];
+      p.style.left = (rect.left + rect.width / 2) + 'px';
+      p.style.top = (rect.top + rect.height / 2) + 'px';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 720);
+    }
+  }
+
+  // Effet de bascule 3D au survol des cartes de mode (Solo / Multijoueur)
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `rotateY(${px * 10}deg) rotateX(${-py * 10}deg) translateY(-2px)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
+
   function updateStreakDisplay() {
     el('hud-streak').textContent = solo.streak >= 2 ? `🔥 x${solo.streak}` : '';
   }
@@ -383,6 +426,7 @@
       solo.points += gained;
       solo.streak++;
       solo.bestStreak = Math.max(solo.bestStreak, solo.streak);
+      if (solo.streak >= 3) burstParticles(el('hud-streak'));
     } else {
       solo.streak = 0;
     }
@@ -446,7 +490,7 @@
     el('new-record').style.display = 'none';
     try {
       const result = await apiPost('/api/best-score', { player: playerName, score: solo.correctCount, rounds: solo.rounds.length });
-      if (result.is_new_record) el('new-record').style.display = 'block';
+      if (result.is_new_record) { el('new-record').style.display = 'block'; burstParticles(el('new-record')); }
     } catch (e) { /* pas grave */ }
     refreshBestBadge();
 
@@ -592,6 +636,7 @@
       case 'answer_ack': {
         el('feedback').textContent = msg.correct ? `Bonne réponse ! +${msg.gained} pts (total : ${msg.score})` : 'Raté ! En attente des autres...';
         el('feedback').className = 'feedback ' + (msg.correct ? 'ok' : 'bad');
+        if (msg.correct) burstParticles(el('feedback'));
         break;
       }
       case 'round_reveal': {
