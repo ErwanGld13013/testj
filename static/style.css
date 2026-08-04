@@ -54,6 +54,13 @@ h1.brand {
 }
 #page-backdrop.loaded { opacity: 1; }
 
+/* Halos flottants, discrets, pour donner du mouvement au fond */
+.blob { position: fixed; border-radius: 50%; filter: blur(60px); opacity: 0.16; z-index: -1; pointer-events: none; }
+.blob-1 { width: 340px; height: 340px; background: var(--gold); top: -80px; left: -80px; animation: float-1 22s ease-in-out infinite; }
+.blob-2 { width: 300px; height: 300px; background: var(--coral); bottom: -100px; right: -60px; animation: float-2 26s ease-in-out infinite; }
+@keyframes float-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, 60px); } }
+@keyframes float-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-50px, -40px); } }
+
 /* Silhouette de skyline / Méditerranée en bas de l'écran, purement décorative */
 #skyline { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 70px; z-index: -1; pointer-events: none; }
 
@@ -88,10 +95,16 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
 
 .btn {
   font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 16px; border: none; border-radius: 999px;
-  padding: 14px 32px; cursor: pointer;
+  padding: 14px 32px; cursor: pointer; position: relative; overflow: hidden;
   background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%); color: #221304;
   box-shadow: 0 8px 24px rgba(227,168,87,0.3); transition: transform .15s ease, box-shadow .15s ease;
 }
+.btn::after {
+  content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: skewX(-20deg); transition: left .5s ease;
+}
+.btn:hover::after { left: 130%; }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(227,168,87,0.4); }
 .btn:active { transform: translateY(0); }
 .btn.ghost { background: transparent; border: 1.5px solid var(--gold-dim); color: var(--gold); box-shadow: none; }

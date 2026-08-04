@@ -19,8 +19,9 @@ from . import deezer_client
 
 ANSWER_GRACE_SECONDS = 3   # temps laissé après la fin de l'extrait pour répondre
 REVEAL_PAUSE_SECONDS = 4   # pause d'affichage du résultat avant la manche suivante
-MIN_SCORE = 100            # points garantis pour une bonne réponse, même tardive
-MAX_BONUS = 900            # bonus de rapidité maximum
+MIN_SCORE = 100            # points garantis pour une bonne réponse, même tardive (mode classique)
+MAX_BONUS = 900            # bonus de rapidité maximum (mode classique)
+BUZZ_POINTS = 500          # points fixes pour le premier à trouver (mode buzzer)
 
 
 def _gen_code(n: int = 5) -> str:
@@ -79,12 +80,14 @@ class Room:
         self.code = code
         self.players: dict[str, Player] = {}
         self.host_id: Optional[str] = None
-        self.settings = {"rounds": 10, "snippet_seconds": 15, "album_ids": []}
+        self.settings = {"rounds": 10, "snippet_seconds": 15, "album_ids": [], "mode": "classic"}
         self.state = "lobby"  # lobby | playing | finished
         self.pool: list[dict] = []
         self.rounds: list[dict] = []
         self.round_idx = -1
         self.round_start_ts: Optional[float] = None
+        self.round_winner_id: Optional[str] = None
+        self.round_winner_event: Optional[asyncio.Event] = None
         self.task: Optional[asyncio.Task] = None
 
     def player_list(self):
@@ -153,11 +156,14 @@ class Room:
 
     async def _run_rounds(self):
         snippet = int(self.settings.get("snippet_seconds", 15))
+        mode = self.settings.get("mode", "classic")
         for idx, rd in enumerate(self.rounds):
             self.round_idx = idx
             for p in self.players.values():
                 p.answered_round = -1
             self.round_start_ts = time.time()
+            self.round_winner_id = None
+            self.round_winner_event = asyncio.Event()
 
             await self.broadcast({
                 "type": "round_start",
@@ -165,6 +171,7 @@ class Room:
                 "total": len(self.rounds),
                 "preview": rd["track"]["preview"],
                 "snippet_seconds": snippet,
+                "mode": mode,
                 "cover_hint": None,  # jamais envoyé avant la réponse : on ne veut pas spoiler la pochette
                 "options": [
                     {"id": o["id"], "title": o["title_short"] or o["title"]}
@@ -172,11 +179,28 @@ class Room:
                 ],
             })
 
-            await asyncio.sleep(snippet + ANSWER_GRACE_SECONDS)
+            if mode == "buzzer":
+                # On termine la manche dès que quelqu'un trouve la bonne
+                # réponse (ou au bout du délai si personne n'y arrive),
+                # plutôt que d'attendre systématiquement la durée complète.
+                try:
+                    await asyncio.wait_for(self.round_winner_event.wait(), timeout=snippet + ANSWER_GRACE_SECONDS)
+                except asyncio.TimeoutError:
+                    pass
+            else:
+                await asyncio.sleep(snippet + ANSWER_GRACE_SECONDS)
+
+            winner = None
+            if self.round_winner_id:
+                wp = self.players.get(self.round_winner_id)
+                if wp:
+                    winner = {"id": self.round_winner_id, "name": wp.name}
 
             await self.broadcast({
                 "type": "round_reveal",
                 "correct_option_id": rd["track"]["id"],
+                "mode": mode,
+                "winner": winner,
                 "track": {
                     "title": rd["track"]["title"],
                     "album": rd["track"]["album"]["title"],
@@ -198,6 +222,7 @@ class Room:
         if p.answered_round == self.round_idx:
             return  # une seule réponse acceptée par manche
         rd = self.rounds[self.round_idx]
+        mode = self.settings.get("mode", "classic")
         snippet = int(self.settings.get("snippet_seconds", 15))
         elapsed = time.time() - (self.round_start_ts or time.time())
         correct = option_id == rd["track"]["id"]
@@ -205,10 +230,22 @@ class Room:
         p.answered_round = self.round_idx
         p.last_correct = correct
         gained = 0
-        if correct:
-            speed_ratio = max(0.0, 1 - min(elapsed, snippet) / snippet) if snippet else 0.0
-            gained = int(MIN_SCORE + MAX_BONUS * speed_ratio)
-            p.score += gained
+
+        if mode == "buzzer":
+            # Le premier qui répond correctement remporte la manche entière ;
+            # une mauvaise réponse ne pénalise pas et ne met pas fin à la
+            # manche pour les autres joueurs.
+            if correct and self.round_winner_id is None:
+                gained = BUZZ_POINTS
+                p.score += gained
+                self.round_winner_id = pid
+                if self.round_winner_event:
+                    self.round_winner_event.set()
+        else:
+            if correct:
+                speed_ratio = max(0.0, 1 - min(elapsed, snippet) / snippet) if snippet else 0.0
+                gained = int(MIN_SCORE + MAX_BONUS * speed_ratio)
+                p.score += gained
 
         # Confirmation immédiate au joueur seul (pas de broadcast : on ne
         # révèle rien aux autres avant la fin de la manche).

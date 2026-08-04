@@ -5,6 +5,8 @@
     screens.forEach(s => el('screen-' + s).classList.toggle('active', s === name));
   }
 
+  const BUZZ_POINTS_LABEL = 500; // doit correspondre à BUZZ_POINTS dans app/rooms.py (texte affiché uniquement)
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -522,6 +524,7 @@
     selectedAlbumIds: new Set(),
     roundsCount: 10,
     snippetSeconds: 15,
+    gameMode: 'classic',
     myId: null,
   };
 
@@ -588,6 +591,9 @@
   function renderMultiHostControls() {
     el('host-setup').style.display = 'block';
     el('waiting-host-msg').style.display = 'none';
+    renderPills('mode-pills',
+      [{ label: 'Classique', value: 'classic' }, { label: '⚡ Buzzer', value: 'buzzer' }],
+      () => multi.gameMode, v => multi.gameMode = v);
     renderPills('rounds-pills',
       [5, 10, 15, 20].map(n => ({ label: n + ' manches', value: n })),
       () => multi.roundsCount, v => multi.roundsCount = v);
@@ -602,7 +608,7 @@
     if (!ids.length) ids = multi.albumsMeta.map(a => a.id);
     multi.ws.send(JSON.stringify({
       type: 'start_game',
-      settings: { rounds: multi.roundsCount, snippet_seconds: multi.snippetSeconds, album_ids: ids },
+      settings: { rounds: multi.roundsCount, snippet_seconds: multi.snippetSeconds, album_ids: ids, mode: multi.gameMode },
     }));
   });
 
@@ -655,8 +661,8 @@
     el('hud-round').textContent = msg.round_index + 1;
     el('hud-total').textContent = msg.total;
     el('hud-streak').textContent = '';
-    el('feedback').textContent = '';
-    el('feedback').className = 'feedback';
+    el('feedback').textContent = msg.mode === 'buzzer' ? '⚡ Le premier qui trouve remporte toute la manche !' : '';
+    el('feedback').className = 'feedback ' + (msg.mode === 'buzzer' ? 'wait' : '');
     el('track-reveal').textContent = '';
     el('btn-next').style.display = 'none';
     el('progress-fill').style.width = '0%';
@@ -703,7 +709,13 @@
     el('disc-cover').style.backgroundImage = `url('${msg.track.cover || ''}')`;
     el('disc').classList.add('revealed');
     el('disc').classList.remove('spinning');
-    el('track-reveal').innerHTML = `<b>${msg.track.title}</b> — ${msg.track.album || ''}`;
+    let revealHtml = `<b>${msg.track.title}</b> — ${msg.track.album || ''}`;
+    if (msg.mode === 'buzzer') {
+      revealHtml += msg.winner
+        ? `<br/>🏆 <b>${msg.winner.name}</b> a buzzé le premier ! (+${BUZZ_POINTS_LABEL} pts)`
+        : `<br/>Personne n'a trouvé à temps.`;
+    }
+    el('track-reveal').innerHTML = revealHtml;
     el('feedback').textContent = '';
 
     const list = el('live-scores');
