@@ -249,3 +249,31 @@ input[type=text]:focus { outline: none; border-color: var(--gold-dim); }
 .ranking-row.gold { border-color: var(--gold); background: rgba(227,168,87,0.08); }
 
 a, a:visited { color: var(--gold); }
+
+/* Écran d'intro : deux mains stylisées qui s'écartent au chargement de la page */
+#intro-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: radial-gradient(ellipse at center, #143260 0%, var(--bg-deep) 60%, #060f1f 100%);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  animation: introFadeOut .6s ease 1.15s forwards;
+}
+.intro-hand {
+  position: absolute; top: 50%; left: 50%; width: 84px; height: 120px;
+  background: linear-gradient(160deg, var(--gold) 0%, var(--gold-dim) 100%);
+  border-radius: 50% 50% 44% 44% / 58% 58% 42% 42%;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.5);
+}
+.intro-hand::before {
+  content: ''; position: absolute; top: 34%; right: -16px; width: 26px; height: 46px;
+  background: inherit; border-radius: 40%;
+}
+.intro-hand.left { transform: translate(-50%, -50%); animation: handLeft 1s cubic-bezier(.6,.05,.15,1) .35s forwards; }
+.intro-hand.right { transform: translate(-50%, -50%) scaleX(-1); animation: handRight 1s cubic-bezier(.6,.05,.15,1) .35s forwards; }
+@keyframes handLeft { from { transform: translate(-50%, -50%); } to { transform: translate(calc(-50% - 150px), -50%) rotate(-10deg); } }
+@keyframes handRight { from { transform: translate(-50%, -50%) scaleX(-1); } to { transform: translate(calc(-50% + 150px), -50%) scaleX(-1) rotate(10deg); } }
+.intro-text {
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 5px; color: var(--gold);
+  opacity: 0; animation: introTextIn .5s ease .55s forwards;
+}
+@keyframes introTextIn { to { opacity: .95; } }
+@keyframes introFadeOut { to { opacity: 0; visibility: hidden; pointer-events: none; } }

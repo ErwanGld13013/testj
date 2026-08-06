@@ -1,5 +1,10 @@
 (function () {
   const el = id => document.getElementById(id);
+
+  // Retire l'écran d'intro (mains qui s'écartent) une fois son animation
+  // terminée, pour qu'il ne bloque plus les clics une fois invisible.
+  setTimeout(() => { const intro = el('intro-overlay'); if (intro) intro.remove(); }, 1800);
+
   const screens = ['home', 'multi-entry', 'lobby', 'setup', 'loading', 'game', 'end', 'end-multi'];
   function showScreen(name) {
     screens.forEach(s => el('screen-' + s).classList.toggle('active', s === name));
